@@ -14,86 +14,85 @@ permissions:
   contents: read
 
 jobs:
-#  build:
-#    name: Build Redis CE MacOS Unstable Package
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        os_version:         # See: https://github.com/actions/runner-images/blob/main/README.md#available-images
-#          - macos-13        # macOS 13 x86_64
-##          - macos-13-xlarge # macOS 13 arm64
-#
-#    runs-on: ${{ matrix.os_version }}
-#
-#    steps:
-#      - uses: actions/checkout@v4
-#        with:
-#          # Use unstable branch when called via workflow_call (from nightly scheduler)
-#          # Use current branch when triggered by PR (for testing)
-#          ref: ${{ github.event_name == 'workflow_call' && 'unstable' || github.ref }}
-#
-#      - name: Install build dependencies
-#        run: |
-#          scripts/install_deps.sh
-#
-#      - name: Build Redis CE Unstable
-#        id: build
-#        run: |
-#          # Use unstable branch instead of tagged version
-#          scripts/build_unstable.sh
-#          echo "UNSIGNED_REDIS_BINARY=unsigned-redis-ce-unstable-$(uname -m).zip" >> $GITHUB_OUTPUT
-#
-#      - name: Upload Redis CE Binary Distribution
-#        uses: actions/upload-artifact@v4
-#        with:
-#          path: ./${{ steps.build.outputs.UNSIGNED_REDIS_BINARY }}
-#          name: ${{ steps.build.outputs.UNSIGNED_REDIS_BINARY }}
-#
-#      - name: Capture build logs on failure
-#        if: failure()
-#        run: |
-#          mkdir -p /tmp/build-logs
-#
-#          echo "Build failed for homebrew on ${{ matrix.os_version }}"
-#          echo "Capturing detailed logs for troubleshooting..."
-#
-#          # Get system info
-#          uname -a > /tmp/build-logs/system-info.log 2>&1
-#          brew --version > /tmp/build-logs/brew-info.log 2>&1
-#
-#          # Get build directory contents if it exists
-#          if [ -d "build_dir" ]; then
-#            find build_dir -type f > /tmp/build-logs/build-dir-contents.log 2>&1 || echo "Failed to list build directory"
-#          fi
-#
-#          # Get Redis build logs if they exist
-#          if [ -f "redis-unstable/src/Makefile" ]; then
-#            make -C redis-unstable -n > /tmp/build-logs/makefile-dry-run.log 2>&1 || echo "Failed to get makefile dry run"
-#          fi
-#
-#          # Create a summary file
-#          {
-#            echo "Build failure summary for homebrew on ${{ matrix.os_version }}"
-#            echo "Date: $(date)"
-#            echo "GitHub SHA: ${{ github.sha }}"
-#            echo "OS Version: ${{ matrix.os_version }}"
-#            echo "Distribution: homebrew"
-#          } > /tmp/build-logs/failure-summary.txt
-#
-#          echo "Log capture complete"
-#
-#      - name: Upload build failure logs
-#        if: failure()
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: build-failure-${{ matrix.os_version }}-homebrew
-#          path: /tmp/build-logs/
-#          retention-days: 30
-#          if-no-files-found: warn
+  build:
+    name: Build Redis CE MacOS Unstable Package
+    strategy:
+      fail-fast: false
+      matrix:
+        os_version:         # See: https://github.com/actions/runner-images/blob/main/README.md#available-images
+          - macos-13        # macOS 13 x86_64
+#          - macos-13-xlarge # macOS 13 arm64
+
+    runs-on: ${{ matrix.os_version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use unstable branch when called via workflow_call (from nightly scheduler)
+          # Use current branch when triggered by PR (for testing)
+          ref: ${{ github.event_name == 'workflow_call' && 'unstable' || github.ref }}
+
+      - name: Install build dependencies
+        run: |
+          scripts/install_deps.sh
+
+      - name: Build Redis CE Unstable
+        id: build
+        run: |
+          # Use unstable branch instead of tagged version
+          scripts/build_unstable.sh
+          echo "UNSIGNED_REDIS_BINARY=unsigned-redis-ce-unstable-$(uname -m).zip" >> $GITHUB_OUTPUT
+
+      - name: Upload Redis CE Binary Distribution
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./${{ steps.build.outputs.UNSIGNED_REDIS_BINARY }}
+          name: ${{ steps.build.outputs.UNSIGNED_REDIS_BINARY }}
+
+      - name: Capture build logs on failure
+        if: failure()
+        run: |
+          mkdir -p /tmp/build-logs
+
+          echo "Build failed for homebrew on ${{ matrix.os_version }}"
+          echo "Capturing detailed logs for troubleshooting..."
+
+          # Get system info
+          uname -a > /tmp/build-logs/system-info.log 2>&1
+          brew --version > /tmp/build-logs/brew-info.log 2>&1
+
+          # Get build directory contents if it exists
+          if [ -d "build_dir" ]; then
+            find build_dir -type f > /tmp/build-logs/build-dir-contents.log 2>&1 || echo "Failed to list build directory"
+          fi
+
+          # Get Redis build logs if they exist
+          if [ -f "redis-unstable/src/Makefile" ]; then
+            make -C redis-unstable -n > /tmp/build-logs/makefile-dry-run.log 2>&1 || echo "Failed to get makefile dry run"
+          fi
+
+          # Create a summary file
+          {
+            echo "Build failure summary for homebrew on ${{ matrix.os_version }}"
+            echo "Date: $(date)"
+            echo "GitHub SHA: ${{ github.sha }}"
+            echo "OS Version: ${{ matrix.os_version }}"
+            echo "Distribution: homebrew"
+          } > /tmp/build-logs/failure-summary.txt
+
+          echo "Log capture complete"
+
+      - name: Upload build failure logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-failure-${{ matrix.os_version }}-homebrew
+          path: /tmp/build-logs/
+          if-no-files-found: warn
 
   test:
     name: Test Redis CE Unstable Package
-#    needs: build
+    needs: build
     strategy:
       fail-fast: false
       matrix:
@@ -110,16 +109,10 @@ jobs:
           # Use current branch when triggered by PR (for testing)
           ref: ${{ github.event_name == 'workflow_call' && 'unstable' || github.ref }}
 
-#      - name: Download built package
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: unsigned-redis-ce-unstable-${{ matrix.os_version == 'macos-13' && 'x86_64' || 'arm64' }}.zip
-
-      - name: Download built package from specific run
-        run: |
-          gh run download 16000595006 --name "unsigned-redis-ce-unstable-x86_64.zip"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download built package
+        uses: actions/download-artifact@v4
+        with:
+          name: unsigned-redis-ce-unstable-${{ matrix.os_version == 'macos-13' && 'x86_64' || 'arm64' }}.zip
 
       - name: Install runtime dependencies
         run: |
@@ -166,7 +159,6 @@ jobs:
         with:
           name: redis-logs-${{ matrix.os_version }}
           path: /tmp/redis-logs/
-          retention-days: 7
 
       - name: Verify Installed Modules
         run: |
