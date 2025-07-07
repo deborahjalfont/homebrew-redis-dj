@@ -7,24 +7,15 @@ on:
         description: 'Name of the Redis artifact to download for test'
         required: true
         type: string
-      os_version:
+      runner:
         description: 'OS version to run tests on'
         required: true
         type: string
 
 jobs:
   test:
-    if: github.event.label.name == 'run-tests' || inputs.artifact_name != null
     name: Test Redis CE
-    strategy:
-      fail-fast: false
-      matrix:
-        os_version:         # Only used when triggered directly (not via workflow_call)
-          - macos-13        # macOS 13 x86_64
-#          - macos-13-xlarge # macOS 13 arm64
-
-    runs-on: ${{ inputs.os_version || matrix.os_version }}
-    
+    runs-on: ${{ inputs.runner }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,10 +68,10 @@ jobs:
           cp redis-server.log /tmp/redis-logs/ 2>/dev/null || echo "No Redis logs to save"
 
       - name: Upload Redis logs
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: redis-logs-${{ matrix.os_version }}
+          name: redis-logs-${{ inputs.runner }}
           path: /tmp/redis-logs/
 
       - name: Verify Installed Modules
