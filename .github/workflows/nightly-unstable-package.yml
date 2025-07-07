@@ -7,4 +7,4 @@ on:
 
 jobs:
   build-and-test-unstable:
-    uses: redis/docker-library-redis/.github/workflows/build-binary-dists.yml@unstable
+    uses: redis/homebrew-redis/.github/workflows/build-binary-dists.yml@unstable
