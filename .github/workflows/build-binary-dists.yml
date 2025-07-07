@@ -2,7 +2,7 @@ name: Build Redis CE MacOS Unstable Package
 
 on:
   push:
-    branches: [ unstable ]
+#    branches: [ unstable ]
     paths:
       - '.github/workflows/build-binary-dists.yml'
       - 'configs/**'
