@@ -2,7 +2,7 @@ name: Build Redis CE MacOS Unstable Package
 
 on:
   push:
-    branches: [ main ]
+    branches: [ unstable ]
     paths:
       - '.github/workflows/build-binary-dists.yml'
       - 'configs/**'
@@ -30,7 +30,7 @@ jobs:
         with:
           # Use unstable branch when called via workflow_call (from nightly scheduler)
           # Use current branch when triggered by PR (for testing)
-          ref: ${{ github.event_name == 'workflow_call' && 'unstable' || github.ref }}
+          ref: ${{ github.event_name == 'push' && github.ref || 'unstable' }}
 
       - name: Install build dependencies
         run: |
